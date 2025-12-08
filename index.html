@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KronoPersonal - Acceso Oficial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; font-family: sans-serif; }
+        .glass-panel { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #app-frame { width: 100vw; height: 100vh; border: none; display: none; background: white; }
+    </style>
+</head>
+<body class="text-white min-h-screen overflow-y-auto">
+
+    <!-- PANTALLA DE VENTA Y LOGIN -->
+    <div id="auth-container" class="min-h-screen flex flex-col items-center justify-center p-4">
+        
+        <!-- TÍTULO -->
+        <div class="text-center mb-6 mt-4">
+            <h1 class="text-3xl font-bold tracking-wider text-emerald-400">KRONO<span class="text-white">PERSONAL</span></h1>
+            <p class="text-gray-400 text-xs uppercase tracking-widest">Gestión Profesional de Slot</p>
+        </div>
+
+        <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+            <!-- CAJA 1: INFORMACIÓN Y COMPRA -->
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-600 shadow-xl relative">
+                <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl">INFO LICENCIA</div>
+                
+                <h2 class="text-lg font-bold text-white mb-3"><i class="fas fa-flag-checkered text-emerald-400 mr-2"></i>Licencia de Uso</h2>
+                
+                <p class="text-gray-300 text-sm mb-4 leading-relaxed">
+                    Aplicación exclusiva para el control de tiempos. Por seguridad y soporte, requiere una licencia única.
+                </p>
+
+                <div class="bg-blue-900/20 rounded-lg p-4 border border-blue-500/20 mb-4">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Pasos para activar:</p>
+                    <ul class="text-sm space-y-2 text-gray-300">
+                        <li class="flex items-center"><span class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold mr-2">1</span> Solicita los datos de pago.</li>
+                        <li class="flex items-center"><span class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold mr-2">2</span> Haz un Bizum de <strong>2€</strong>.</li>
+                        <li class="flex items-center"><span class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold mr-2">3</span> Recibe tu Clave Personal.</li>
+                    </ul>
+                </div>
+
+                <div class="text-center mb-4">
+                     <span class="text-2xl font-bold text-white">2,00€</span> <span class="text-xs text-gray-400">(Pago único)</span>
+                </div>
+
+                <a id="mail-link" href="#" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-center shadow transition border border-blue-400">
+                    <i class="fas fa-shopping-cart mr-2"></i> SOLICITAR LICENCIA (2€)
+                </a>
+            </div>
+
+            <!-- CAJA 2: LOGIN -->
+            <div class="glass-panel rounded-2xl p-6 relative">
+                <div class="absolute top-0 left-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-br">CLIENTES</div>
+                
+                <h2 class="text-lg font-bold text-white mb-4 mt-1"><i class="fas fa-key text-emerald-400 mr-2"></i>Acceso</h2>
+
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tu Correo</label>
+                        <input type="email" id="email" required 
+                            class="w-full bg-slate-900 border border-slate-600 rounded p-3 focus:border-emerald-500 outline-none text-white text-sm"
+                            placeholder="nombre@email.com">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tu Clave</label>
+                        <input type="text" id="code" required 
+                            class="w-full bg-slate-900 border border-slate-600 rounded p-3 focus:border-emerald-500 outline-none text-white text-center tracking-widest uppercase font-mono text-sm"
+                            placeholder="XXX-XXX">
+                    </div>
+                    
+                    <div id="msg-box" class="hidden p-2 rounded text-xs text-center font-bold"></div>
+
+                    <button type="submit" id="btn-login" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center">
+                        ENTRAR AHORA <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <p class="mt-8 text-[10px] text-gray-600 text-center max-w-lg">
+            Software original KronoPersonal. Todos los derechos reservados.<br>
+            Soporte y dudas: slotcarhome@gmail.com
+        </p>
+    </div>
+
+    <!-- APP FRAME -->
+    <iframe id="app-frame" src="about:blank"></iframe>
+    
+    <button onclick="logout()" id="logout-btn" class="hidden fixed bottom-6 right-6 bg-red-600 w-12 h-12 rounded-full shadow-lg z-[100] flex items-center justify-center text-white text-xl border-2 border-white/20">
+        <i class="fas fa-power-off"></i>
+    </button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // TUS CLAVES (NO TOCAR)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
+          authDomain: "correo-95e58.firebaseapp.com",
+          projectId: "correo-95e58",
+          storageBucket: "correo-95e58.firebasestorage.app",
+          messagingSenderId: "977860532946",
+          appId: "1:977860532946:web:3738c6b7165201bce7ab0b",
+          measurementId: "G-6DMG51VQ92"
+        };
+        
+        // DATOS DE ESTA APP (APP 1)
+        const ADMIN_EMAIL = "slotcarhome@gmail.com"; 
+        const APP_FILENAME = "kronopersonal.html"; // <--- ESTO CARGA TU APP
+        const APP_ID = "app_krono";                // <--- CAJÓN BASE DE DATOS
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const mailLink = document.getElementById('mail-link');
+        const emailInput = document.getElementById('email');
+        
+        function updateMailLink() {
+            const userEmail = emailInput.value;
+            const subject = "Solicitud Licencia KronoPersonal (2€)";
+            let body = "Hola,%0D%0A%0D%0AMe interesa comprar la licencia de KronoPersonal por 2 Euros.%0D%0APor favor, envíame los datos para el Bizum.";
+            if(userEmail) body += `%0D%0A%0D%0AMi usuario será: ${userEmail}`;
+            mailLink.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+        }
+        emailInput.addEventListener('input', updateMailLink);
+        updateMailLink();
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value.toLowerCase().trim();
+            const code = document.getElementById('code').value.trim();
+            const btn = document.getElementById('btn-login');
+            
+            btn.innerHTML = '...'; btn.disabled = true;
+
+            try {
+                const q = query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes'), where("email", "==", email), where("code", "==", code));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    if(userData.active === false) showMessage("⛔ Licencia desactivada.", "error");
+                    else { localStorage.setItem('user_' + APP_ID, email); showApp(); }
+                } else showMessage("❌ Datos incorrectos.", "error");
+            } catch (error) { console.error(error); showMessage("⚠️ Error de conexión.", "error"); }
+            btn.innerHTML = 'ENTRAR AHORA <i class="fas fa-arrow-right ml-2"></i>'; btn.disabled = false;
+        });
+
+        function showMessage(text, type) {
+            const box = document.getElementById('msg-box');
+            box.textContent = text;
+            box.className = `p-2 rounded text-xs text-center font-bold border ${type === 'error' ? 'bg-red-900/50 text-red-200 border-red-500' : 'bg-green-900/50 text-green-200 border-green-500'}`;
+            box.classList.remove('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('app-frame').src = APP_FILENAME;
+            document.getElementById('app-frame').style.display = 'block';
+            document.getElementById('logout-btn').classList.remove('hidden');
+        }
+
+        window.logout = function() { localStorage.removeItem('user_' + APP_ID); location.reload(); }
+        if(localStorage.getItem('user_' + APP_ID)) showApp();
+    </script>
+</body>
+</html>

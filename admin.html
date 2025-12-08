@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - KronoPersonal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-4">
+
+    <div class="max-w-md mx-auto space-y-6">
+        
+        <div class="text-center mt-4">
+            <h1 class="text-xl font-bold text-emerald-400">Ventas KronoPersonal</h1>
+        </div>
+
+        <!-- FASE 1: PEDIR PAGO -->
+        <div class="bg-slate-800 rounded-xl p-5 border border-yellow-600/30 relative">
+            <div class="absolute top-0 right-0 bg-yellow-600 text-[10px] font-bold px-2 py-1 rounded-bl">PASO 1</div>
+            <h2 class="text-base font-bold text-yellow-400 mb-3"><i class="fas fa-comment-dollar mr-2"></i>Pedir 2€ (Bizum)</h2>
+            <input type="email" id="client-email-1" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm mb-3" placeholder="Correo del interesado...">
+            <button onclick="sendPaymentRequest()" class="w-full bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-2 rounded text-sm flex justify-center gap-2">
+                <i class="fas fa-paper-plane"></i> ENVIAR DATOS PAGO
+            </button>
+        </div>
+
+        <!-- FASE 2: ENTREGAR -->
+        <div class="bg-slate-800 rounded-xl p-5 border border-green-600/30 relative">
+            <div class="absolute top-0 right-0 bg-green-600 text-[10px] font-bold px-2 py-1 rounded-bl">PASO 2</div>
+            <h2 class="text-base font-bold text-green-400 mb-3"><i class="fas fa-gift mr-2"></i>Entregar Licencia</h2>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[10px] text-gray-400">App ID (No tocar si es Krono)</label>
+                    <input type="text" id="app-id" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-gray-300" value="app_krono">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400">Correo Cliente (Pagado)</label>
+                    <input type="email" id="client-email-2" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-green-500 outline-none">
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="generated-code" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-mono text-yellow-400 font-bold" readonly>
+                    <button onclick="generateRandomCode()" class="bg-slate-700 p-2 rounded"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                
+                <button onclick="saveUser()" id="btn-save" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded shadow-lg text-sm">GUARDAR Y GENERAR</button>
+                
+                <div id="delivery-section" class="hidden pt-3 border-t border-slate-700">
+                    <a id="btn-send-delivery" href="#" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-center shadow-lg border border-blue-400 text-sm">
+                        <i class="fas fa-envelope mr-2"></i> ENVIAR CÓDIGO AHORA
+                    </a>
+                </div>
+                <div id="status" class="text-center text-xs hidden mt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // DATOS DE VENTA APP 1
+        const PRECIO = "2€";
+        const BIZUM_NUM = "686 16 60 07"; 
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
+          authDomain: "correo-95e58.firebaseapp.com",
+          projectId: "correo-95e58",
+          storageBucket: "correo-95e58.firebasestorage.app",
+          messagingSenderId: "977860532946",
+          appId: "1:977860532946:web:3738c6b7165201bce7ab0b",
+          measurementId: "G-6DMG51VQ92"
+        };
+
+        const WEB_URL = window.location.href.replace('admin.html', 'index.html');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // FASE 1: PEDIR DINERO
+        window.sendPaymentRequest = function() {
+            const email = document.getElementById('client-email-1').value;
+            if(!email) return alert("Falta el correo");
+            const subject = encodeURIComponent("Pago Licencia KronoPersonal");
+            const body = `Hola,%0D%0A%0D%0APara activar tu licencia de KronoPersonal, los pasos son:%0D%0A%0D%0A💰 Importe: ${PRECIO}%0D%0A📲 Bizum al: ${BIZUM_NUM}%0D%0A%0D%0AEnvíame el justificante respondiendo a este correo y recibirás tu clave al instante.`;
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            document.getElementById('client-email-2').value = email;
+        }
+
+        // FASE 2: ENTREGAR
+        window.generateRandomCode = function() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let code = "";
+            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            code += "-";
+            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById('generated-code').value = code;
+            document.getElementById('delivery-section').classList.add('hidden');
+        }
+
+        window.saveUser = async function() {
+            const email = document.getElementById('client-email-2').value.trim();
+            const code = document.getElementById('generated-code').value;
+            const appId = document.getElementById('app-id').value.trim();
+            const btn = document.getElementById('btn-save');
+            const status = document.getElementById('status');
+            const deliverySection = document.getElementById('delivery-section');
+            const btnSend = document.getElementById('btn-send-delivery');
+
+            if(!email || !code || !appId) return alert("Faltan datos");
+            btn.disabled = true; btn.textContent = 'Guardando...';
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'access_codes'), {
+                    email: email, code: code, active: true, createdAt: new Date().toISOString()
+                });
+                status.textContent = "✅ Guardado."; status.className = "text-green-400 font-bold text-xs mt-2"; status.classList.remove('hidden');
+
+                const subject = encodeURIComponent("Tu Licencia KronoPersonal - Activada");
+                const bodyText = `Hola!%0D%0A%0D%0APago recibido correctamente. Aquí tienes tu acceso:%0D%0A%0D%0A📧 Usuario: ${email}%0D%0A🔑 CLAVE: ${code}%0D%0A%0D%0A👉 Entra aquí: ${WEB_URL}%0D%0A%0D%0AGracias por tu confianza!`;
+                
+                btnSend.href = `mailto:${email}?subject=${subject}&body=${bodyText}`;
+                deliverySection.classList.remove('hidden');
+
+            } catch (error) { console.error(error); status.textContent = "Error"; }
+            btn.disabled = false; btn.textContent = 'GUARDAR Y GENERAR';
+        }
+        generateRandomCode();
+    </script>
+</body>
+</html>
