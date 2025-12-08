@@ -61,12 +61,12 @@
             <div class="glass-panel rounded-2xl p-6 relative">
                 <div class="absolute top-0 left-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-br">CLIENTES</div>
                 
-                <h2 class="text-lg font-bold text-white mb-4 mt-1"><i class="fas fa-key text-emerald-400 mr-2"></i>Acceso</h2>
+                <h2 class="text-lg font-bold text-white mb-4 mt-1"><i class="fas fa-key text-emerald-400 mr-2"></i>Acceso Seguro</h2>
 
                 <form id="login-form" class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tu Correo</label>
-                        <input type="email" id="email" required 
+                        <input type="email" id="login-email" required 
                             class="w-full bg-slate-900 border border-slate-600 rounded p-3 focus:border-emerald-500 outline-none text-white text-sm"
                             placeholder="nombre@email.com">
                     </div>
@@ -89,22 +89,23 @@
         
         <p class="mt-8 text-[10px] text-gray-600 text-center max-w-lg">
             Software original KronoPersonal. Todos los derechos reservados.<br>
-            Soporte y dudas: slotcarhome@gmail.com
+            Soporte: slotcarhome@gmail.com
         </p>
     </div>
 
     <!-- APP FRAME -->
     <iframe id="app-frame" src="about:blank"></iframe>
     
-    <button onclick="logout()" id="logout-btn" class="hidden fixed bottom-6 right-6 bg-red-600 w-12 h-12 rounded-full shadow-lg z-[100] flex items-center justify-center text-white text-xl border-2 border-white/20">
+    <!-- BOTÓN SALIR -->
+    <button onclick="logout()" id="logout-btn" class="hidden fixed bottom-6 right-6 bg-red-600 w-12 h-12 rounded-full shadow-lg z-[100] flex items-center justify-center text-white text-xl border-2 border-white/20 transition transform active:scale-90">
         <i class="fas fa-power-off"></i>
     </button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // TUS CLAVES (NO TOCAR)
+        // TUS CLAVES
         const firebaseConfig = {
           apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
           authDomain: "correo-95e58.firebaseapp.com",
@@ -115,29 +116,27 @@
           measurementId: "G-6DMG51VQ92"
         };
         
-        // DATOS DE ESTA APP (APP 1)
+        // DATOS DE LA APP 1
         const ADMIN_EMAIL = "slotcarhome@gmail.com"; 
-        const APP_FILENAME = "kronopersonal.html"; // <--- ESTO CARGA TU APP
-        const APP_ID = "app_krono";                // <--- CAJÓN BASE DE DATOS
+        const APP_FILENAME = "kronopersonal.html";
+        const APP_ID = "app_krono"; // Cajón base de datos
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const mailLink = document.getElementById('mail-link');
-        const emailInput = document.getElementById('email');
         
-        function updateMailLink() {
-            const userEmail = emailInput.value;
-            const subject = "Solicitud Licencia KronoPersonal (2€)";
-            let body = "Hola,%0D%0A%0D%0AMe interesa comprar la licencia de KronoPersonal por 2 Euros.%0D%0APor favor, envíame los datos para el Bizum.";
-            if(userEmail) body += `%0D%0A%0D%0AMi usuario será: ${userEmail}`;
-            mailLink.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-        }
-        emailInput.addEventListener('input', updateMailLink);
-        updateMailLink();
+        // --- CONFIGURACIÓN DEL MAILTO ---
+        // Como quitamos el input, ponemos un mensaje genérico pero claro
+        const mailLink = document.getElementById('mail-link');
+        
+        const subject = "Solicitud Licencia KronoPersonal (2€)";
+        const body = "Hola Admin,%0D%0A%0D%0AMe interesa la licencia de KRONO PERSONAL por 2 Euros.%0D%0A%0D%0APor favor envíame el Bizum.%0D%0A(Mi correo es el remitente de este mensaje).";
+        
+        mailLink.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
 
+        // --- LOGIN SEGURO CON ANTI-COPIA ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = emailInput.value.toLowerCase().trim();
+            const email = document.getElementById('login-email').value.toLowerCase().trim();
             const code = document.getElementById('code').value.trim();
             const btn = document.getElementById('btn-login');
             
@@ -148,13 +147,42 @@
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
-                    const userData = querySnapshot.docs[0].data();
-                    if(userData.active === false) showMessage("⛔ Licencia desactivada.", "error");
-                    else { localStorage.setItem('user_' + APP_ID, email); showApp(); }
-                } else showMessage("❌ Datos incorrectos.", "error");
+                    const docSnap = querySnapshot.docs[0];
+                    const userData = docSnap.data();
+                    
+                    if(userData.active === false) {
+                        showMessage("⛔ Licencia desactivada.", "error");
+                    } else {
+                        // SEGURIDAD: Generar ID de sesión único
+                        const sessionID = Math.random().toString(36).substring(2);
+                        
+                        // Echar al que estuviera antes
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes', docSnap.id), {
+                            current_session: sessionID
+                        });
+
+                        localStorage.setItem('session_' + APP_ID, sessionID);
+                        localStorage.setItem('doc_id_' + APP_ID, docSnap.id);
+                        startSecurityCheck(docSnap.id, sessionID);
+                        showApp();
+                    }
+                } else {
+                    showMessage("❌ Datos incorrectos.", "error");
+                }
             } catch (error) { console.error(error); showMessage("⚠️ Error de conexión.", "error"); }
             btn.innerHTML = 'ENTRAR AHORA <i class="fas fa-arrow-right ml-2"></i>'; btn.disabled = false;
         });
+
+        // --- VIGILANTE ---
+        function startSecurityCheck(docId, mySessionID) {
+            onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes', docId), (doc) => {
+                const data = doc.data();
+                if (data && data.current_session && data.current_session !== mySessionID) {
+                    alert("⚠️ ALERTA DE SEGURIDAD\n\nSe ha abierto esta cuenta en otro dispositivo.\nSe cerrará la sesión aquí.");
+                    logout();
+                }
+            });
+        }
 
         function showMessage(text, type) {
             const box = document.getElementById('msg-box');
@@ -170,8 +198,18 @@
             document.getElementById('logout-btn').classList.remove('hidden');
         }
 
-        window.logout = function() { localStorage.removeItem('user_' + APP_ID); location.reload(); }
-        if(localStorage.getItem('user_' + APP_ID)) showApp();
+        window.logout = function() {
+            localStorage.removeItem('session_' + APP_ID);
+            localStorage.removeItem('doc_id_' + APP_ID);
+            location.reload();
+        }
+
+        const savedDocId = localStorage.getItem('doc_id_' + APP_ID);
+        const savedSession = localStorage.getItem('session_' + APP_ID);
+        if(savedDocId && savedSession) {
+            startSecurityCheck(savedDocId, savedSession);
+            showApp();
+        }
     </script>
 </body>
 </html>
