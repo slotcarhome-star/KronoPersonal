@@ -3,66 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - KronoPersonal</title>
+    <title>Admin - KronoPersonal SILVER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; font-family: sans-serif; color: white; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .input-dark { background: #1e293b; border: 1px solid #475569; color: white; outline: none; transition: 0.3s; }
+        .input-dark:focus { border-color: #94a3b8; box-shadow: 0 0 10px rgba(148, 163, 184, 0.3); } /* Foco plateado */
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-4">
+<body class="min-h-screen p-2">
 
-    <div class="max-w-md mx-auto space-y-6">
+    <!-- 1. PANTALLA DE BLOQUEO -->
+    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-4">
+        <div class="glass p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl border border-slate-700">
+            <i class="fas fa-user-lock text-5xl text-slate-400 mb-6"></i>
+            <h2 class="text-xl font-bold mb-4">Admin KronoPersonal</h2>
+            <input type="password" id="admin-pass" class="w-full input-dark p-3 rounded-lg mb-4 text-center" placeholder="Contraseña">
+            <button onclick="checkPass()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded-lg transition">ENTRAR</button>
+            <p id="login-msg" class="text-red-400 text-xs mt-3 hidden">Contraseña incorrecta</p>
+        </div>
+    </div>
+
+    <!-- 2. PANEL PRINCIPAL -->
+    <div id="main-panel" class="hidden max-w-md mx-auto space-y-6">
         
-        <div class="text-center mt-4">
-            <h1 class="text-xl font-bold text-emerald-400">Ventas KronoPersonal</h1>
+        <!-- CABECERA -->
+        <header class="text-center py-4">
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-400 uppercase">KRONO MANAGER</h1>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Gestión de Licencias Silver (5€)</p>
+        </header>
+
+        <!-- CONTADOR DE INTERESADOS -->
+        <div class="glass p-4 rounded-xl border-l-4 border-slate-400 flex items-center justify-between">
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase">Clientes Interesados</h3>
+                <p class="text-[10px] text-slate-500">Han pulsado "Solicitar"</p>
+            </div>
+            <div class="text-right">
+                <span id="clicks-counter" class="text-3xl font-black text-white">--</span>
+                <i class="fas fa-users text-slate-600 ml-2"></i>
+            </div>
         </div>
 
         <!-- FASE 1: PEDIR PAGO -->
-        <div class="bg-slate-800 rounded-xl p-5 border border-yellow-600/30 relative">
-            <div class="absolute top-0 right-0 bg-yellow-600 text-[10px] font-bold px-2 py-1 rounded-bl">PASO 1</div>
-            <h2 class="text-base font-bold text-yellow-400 mb-3"><i class="fas fa-comment-dollar mr-2"></i>Pedir 2€ (Bizum)</h2>
-            <input type="email" id="client-email-1" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm mb-3" placeholder="Correo del interesado...">
-            <button onclick="sendPaymentRequest()" class="w-full bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-2 rounded text-sm flex justify-center gap-2">
-                <i class="fas fa-paper-plane"></i> ENVIAR DATOS PAGO
+        <div class="glass rounded-xl p-5 border border-slate-600/30 relative">
+            <div class="absolute top-0 right-0 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl">PASO 1</div>
+            <h2 class="text-sm font-bold text-slate-300 mb-3"><i class="fas fa-comment-dollar mr-2"></i>Enviar Instrucciones (5€)</h2>
+            
+            <input type="email" id="client-email-1" class="w-full input-dark rounded p-2 text-sm mb-3" placeholder="Correo del interesado...">
+            
+            <button onclick="sendPaymentRequest()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded text-sm flex justify-center gap-2 border border-slate-500">
+                <i class="fas fa-paper-plane text-slate-300"></i> ENVIAR DATOS PAGO
             </button>
         </div>
 
-        <!-- FASE 2: ENTREGAR -->
-        <div class="bg-slate-800 rounded-xl p-5 border border-green-600/30 relative">
-            <div class="absolute top-0 right-0 bg-green-600 text-[10px] font-bold px-2 py-1 rounded-bl">PASO 2</div>
-            <h2 class="text-base font-bold text-green-400 mb-3"><i class="fas fa-gift mr-2"></i>Entregar Licencia</h2>
+        <!-- FASE 2: ENTREGAR LICENCIA -->
+        <div class="glass rounded-xl p-5 border border-emerald-600/30 relative">
+            <div class="absolute top-0 right-0 bg-emerald-600 text-[10px] font-bold px-2 py-1 rounded-bl">PASO 2</div>
+            <h2 class="text-sm font-bold text-emerald-400 mb-3"><i class="fas fa-gift mr-2"></i>Generar y Entregar</h2>
             
             <div class="space-y-3">
+                <input type="hidden" id="app-id" value="app_krono"> <!-- ID FIJO SILVER -->
+                
                 <div>
-                    <label class="text-[10px] text-gray-400">App ID (No tocar si es Krono)</label>
-                    <input type="text" id="app-id" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-gray-300" value="app_krono">
-                </div>
-                <div>
-                    <label class="text-[10px] text-gray-400">Correo Cliente (Pagado)</label>
-                    <input type="email" id="client-email-2" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-green-500 outline-none">
-                </div>
-                <div class="flex gap-2">
-                    <input type="text" id="generated-code" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-mono text-yellow-400 font-bold" readonly>
-                    <button onclick="generateRandomCode()" class="bg-slate-700 p-2 rounded"><i class="fas fa-sync-alt"></i></button>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Correo Cliente (Pagado)</label>
+                    <input type="email" id="client-email-2" class="w-full input-dark rounded p-2 text-sm focus:border-emerald-500 font-mono">
                 </div>
                 
-                <button onclick="saveUser()" id="btn-save" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded shadow-lg text-sm">GUARDAR Y GENERAR</button>
+                <button onclick="generateAndSave()" id="btn-save" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded shadow-lg text-sm mt-2">
+                    <i class="fas fa-cogs mr-1"></i> GUARDAR Y PREPARAR ENTREGA
+                </button>
                 
-                <div id="delivery-section" class="hidden pt-3 border-t border-slate-700">
+                <!-- ZONA DE ENTREGA (OCULTA) -->
+                <div id="delivery-section" class="hidden pt-4 mt-2 border-t border-slate-700/50">
+                    <div class="bg-slate-900 p-2 rounded mb-3 text-center border border-slate-700">
+                        <p class="text-[10px] text-slate-400">CLAVE GENERADA:</p>
+                        <p id="display-code" class="text-xl font-mono text-slate-200 font-bold tracking-widest select-all">---</p>
+                    </div>
+
                     <a id="btn-send-delivery" href="#" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-center shadow-lg border border-blue-400 text-sm">
-                        <i class="fas fa-envelope mr-2"></i> ENVIAR CÓDIGO AHORA
+                        <i class="fas fa-envelope-open-text mr-2"></i> ABRIR CORREO Y ENVIAR
                     </a>
+                    <p id="status" class="text-center text-xs text-emerald-400 mt-2 font-bold"></p>
                 </div>
-                <div id="status" class="text-center text-xs hidden mt-2"></div>
             </div>
+        </div>
+        
+        <div class="text-center pt-4">
+             <button onclick="logout()" class="text-slate-500 hover:text-white text-xs"><i class="fas fa-power-off mr-1"></i> Cerrar Sesión</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // DATOS DE VENTA APP 1
-        const PRECIO = "2€";
-        const BIZUM_NUM = "686 16 60 07"; 
+        // DATOS FIJOS SILVER
+        const PRECIO = "5€";
+        const APP_ID = "app_krono";
+        
+        // Detectar URL de la App (Silver suele ser index.html)
+        const BASE_URL = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+        const CLIENT_URL = `${BASE_URL}/index.html`; 
 
         const firebaseConfig = {
           apiKey: "AIzaSyDW-2Yc4kvZJYbNOVeesPZWdRThYe0noUI",
@@ -74,59 +119,103 @@
           measurementId: "G-6DMG51VQ92"
         };
 
-        const WEB_URL = window.location.href.replace('admin.html', 'index.html');
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        let app, db, auth;
 
-        // FASE 1: PEDIR DINERO
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            signInAnonymously(auth).catch(e => console.warn("Modo offline/local:", e.message));
+        } catch(e) { console.error("Error Firebase", e); }
+
+        // --- SEGURIDAD ---
+        window.checkPass = function() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === "admin123") {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-panel').classList.remove('hidden');
+                initStats();
+            } else {
+                document.getElementById('login-msg').classList.remove('hidden');
+            }
+        }
+        window.logout = function() { location.reload(); }
+
+        // --- ESTADÍSTICAS ---
+        function initStats() {
+            try {
+                onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stats'), (docSnap) => {
+                    const count = docSnap.data()?.purchase_clicks || 0;
+                    document.getElementById('clicks-counter').textContent = count;
+                }, (error) => {
+                    console.warn("No se pudieron leer estadísticas");
+                    document.getElementById('clicks-counter').textContent = "-";
+                });
+            } catch(e) { console.warn("Stats desactivadas"); }
+        }
+
+        // --- FASE 1: ENVIAR DATOS DE PAGO ---
         window.sendPaymentRequest = function() {
             const email = document.getElementById('client-email-1').value;
-            if(!email) return alert("Falta el correo");
-            const subject = encodeURIComponent("Pago Licencia KronoPersonal");
-            const body = `Hola,%0D%0A%0D%0APara activar tu licencia de KronoPersonal, los pasos son:%0D%0A%0D%0A💰 Importe: ${PRECIO}%0D%0A📲 Bizum al: ${BIZUM_NUM}%0D%0A%0D%0AEnvíame el justificante respondiendo a este correo y recibirás tu clave al instante.`;
+            if(!email) return alert("Escribe el correo del interesado.");
+            
+            const subject = encodeURIComponent("Instrucciones Pago KronoPersonal SILVER");
+            
+            // CORREO INSTRUCCIONES 5€
+            const body = `Hola ${email},%0D%0A%0D%0APara activar tu licencia SILVER de KronoPersonal, los pasos son:%0D%0A%0D%0A1. Importe: ${PRECIO}%0D%0A2. Realiza el pago (Bizum/Transferencia) según lo acordado.%0D%0A%0D%0AEnvíame el justificante respondiendo a este correo y recibirás tu clave de activación inmediata.%0D%0A%0D%0AGracias.`;
+            
             window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
             document.getElementById('client-email-2').value = email;
         }
 
-        // FASE 2: ENTREGAR
-        window.generateRandomCode = function() {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            let code = "";
-            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-            code += "-";
-            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-            document.getElementById('generated-code').value = code;
-            document.getElementById('delivery-section').classList.add('hidden');
-        }
-
-        window.saveUser = async function() {
+        // --- FASE 2: GENERAR Y GUARDAR ---
+        window.generateAndSave = async function() {
             const email = document.getElementById('client-email-2').value.trim();
-            const code = document.getElementById('generated-code').value;
-            const appId = document.getElementById('app-id').value.trim();
             const btn = document.getElementById('btn-save');
             const status = document.getElementById('status');
             const deliverySection = document.getElementById('delivery-section');
             const btnSend = document.getElementById('btn-send-delivery');
 
-            if(!email || !code || !appId) return alert("Faltan datos");
-            btn.disabled = true; btn.textContent = 'Guardando...';
+            if(!email) return alert("Falta el correo del cliente.");
+            
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERANDO...';
+
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let code = "";
+            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            code += "-";
+            for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
 
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'access_codes'), {
-                    email: email, code: code, active: true, createdAt: new Date().toISOString()
+                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes'), {
+                    email: email, 
+                    code: code, 
+                    active: true, 
+                    createdAt: new Date().toISOString()
                 });
-                status.textContent = "✅ Guardado."; status.className = "text-green-400 font-bold text-xs mt-2"; status.classList.remove('hidden');
 
-                const subject = encodeURIComponent("Tu Licencia KronoPersonal - Activada");
-                const bodyText = `Hola!%0D%0A%0D%0APago recibido correctamente. Aquí tienes tu acceso:%0D%0A%0D%0A📧 Usuario: ${email}%0D%0A🔑 CLAVE: ${code}%0D%0A%0D%0A👉 Entra aquí: ${WEB_URL}%0D%0A%0D%0AGracias por tu confianza!`;
+                status.textContent = "✅ Licencia Guardada";
+                document.getElementById('display-code').textContent = code;
+
+                const subject = encodeURIComponent("Tu Licencia KronoPersonal SILVER - Activada");
+                
+                // CORREO ENTREGA CON AGRADECIMIENTO OFICIAL
+                const bodyText = `SlotCarHome le da las gracias por confiar en nuestro producto.%0D%0A%0D%0APago recibido correctamente. Aquí tienes tu acceso:%0D%0A%0D%0A📧 Usuario: ${email}%0D%0A🔑 CLAVE: ${code}%0D%0A%0D%0A👉 Entra aquí: ${CLIENT_URL}%0D%0A%0D%0AGracias por tu confianza!`;
                 
                 btnSend.href = `mailto:${email}?subject=${subject}&body=${bodyText}`;
                 deliverySection.classList.remove('hidden');
+                document.getElementById('client-email-1').value = "";
 
-            } catch (error) { console.error(error); status.textContent = "Error"; }
-            btn.disabled = false; btn.textContent = 'GUARDAR Y GENERAR';
+            } catch (error) { 
+                console.error(error); 
+                status.textContent = "❌ Error: " + error.message; 
+                status.className = "text-red-400 text-xs font-bold mt-2";
+            }
+            
+            btn.disabled = false; 
+            btn.innerHTML = '<i class="fas fa-cogs mr-1"></i> GUARDAR Y PREPARAR ENTREGA';
         }
-        generateRandomCode();
     </script>
 </body>
 </html>
