@@ -23,6 +23,7 @@
             <input type="password" id="admin-pass" class="w-full input-dark p-3 rounded-lg mb-4 text-center" placeholder="Contraseña">
             <button onclick="checkPass()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded-lg transition">ENTRAR</button>
             <p id="login-msg" class="text-red-400 text-xs mt-3 hidden">Contraseña incorrecta</p>
+            <p id="auth-status" class="text-xs text-slate-500 mt-2">Conectando...</p>
         </div>
     </div>
 
@@ -103,9 +104,9 @@
 
         // DATOS FIJOS SILVER
         const PRECIO = "5€";
-        const APP_ID = "app_krono";
+        const APP_ID = "app_krono"; // ID DE KRONO PERSONAL
         
-        // Detectar URL de la App (Silver suele ser index.html)
+        // Detectar URL de la App
         const BASE_URL = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
         const CLIENT_URL = `${BASE_URL}/index.html`; 
 
@@ -119,16 +120,24 @@
           measurementId: "G-6DMG51VQ92"
         };
 
-        let app, db, auth;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            signInAnonymously(auth).catch(e => console.warn("Modo offline/local:", e.message));
-        } catch(e) { console.error("Error Firebase", e); }
+        // --- SEGURIDAD AUTOMÁTICA ---
+        (async function initSecurity() {
+            try {
+                await signInAnonymously(auth);
+                document.getElementById('auth-status').textContent = "Conectado";
+                document.getElementById('auth-status').className = "text-xs text-green-500 mt-2 font-bold";
+            } catch(e) { 
+                console.error("Error Auth:", e); 
+                document.getElementById('auth-status').textContent = "Error Conexión: " + e.message;
+                document.getElementById('auth-status').className = "text-xs text-red-500 mt-2";
+            }
+        })();
 
-        // --- SEGURIDAD ---
+        // --- SEGURIDAD LOGIN (CONTRASEÑA SIMPLE) ---
         window.checkPass = function() {
             const pass = document.getElementById('admin-pass').value;
             if(pass === "admin123") {
@@ -148,8 +157,7 @@
                     const count = docSnap.data()?.purchase_clicks || 0;
                     document.getElementById('clicks-counter').textContent = count;
                 }, (error) => {
-                    console.warn("No se pudieron leer estadísticas");
-                    document.getElementById('clicks-counter').textContent = "-";
+                    console.warn("No se pudieron leer estadísticas (Permisos?)");
                 });
             } catch(e) { console.warn("Stats desactivadas"); }
         }
@@ -188,6 +196,7 @@
             for(let i=0; i<3; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
 
             try {
+                // Escritura segura
                 await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes'), {
                     email: email, 
                     code: code, 
@@ -196,11 +205,12 @@
                 });
 
                 status.textContent = "✅ Licencia Guardada";
+                status.className = "text-center text-xs text-emerald-400 mt-2 font-bold";
                 document.getElementById('display-code').textContent = code;
 
                 const subject = encodeURIComponent("Tu Licencia KronoPersonal SILVER - Activada");
                 
-                // CORREO ENTREGA CON AGRADECIMIENTO OFICIAL
+                // CORREO ENTREGA
                 const bodyText = `SlotCarHome le da las gracias por confiar en nuestro producto.%0D%0A%0D%0APago recibido correctamente. Aquí tienes tu acceso:%0D%0A%0D%0A📧 Usuario: ${email}%0D%0A🔑 CLAVE: ${code}%0D%0A%0D%0A👉 Entra aquí: ${CLIENT_URL}%0D%0A%0D%0AGracias por tu confianza!`;
                 
                 btnSend.href = `mailto:${email}?subject=${subject}&body=${bodyText}`;
