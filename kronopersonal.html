@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KRONO V.1.0 by Albert Closa</title>
+    <title>KRONO V.1.1 by Albert Closa</title>
     
     <!-- METADATOS PWA Y PERMISOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -463,7 +463,7 @@
         <div class="silver-panel flex flex-col sm:flex-row justify-between items-center w-full py-3 px-4 mt-4 mb-4 header-flex">
             <div class="flex items-center space-x-2 mb-2 sm:mb-0">
                 <h1 class="text-base sm:text-lg neon-silver-title tracking-wider mr-2">
-                    KRONO V.1.0 <span class="text-xs font-normal text-gray-500 ml-1 italic">by Albert Closa</span>
+                    KRONO V.1.1 <span class="text-xs font-normal text-gray-500 ml-1 italic">by Albert Closa</span>
                 </h1>
                 
                 <!-- BOTÓN HISTORIAL -->
@@ -740,6 +740,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-1.89.26M3 6l.75-2.25M7 3l2.25.75"/></svg>
                 VOLVER A EMPEZAR
             </button>
+            
+            <!-- BOTÓN EXPORTAR EXCEL (NUEVO) -->
+            <button id="export-excel-btn" class="mt-3 w-full bg-white border border-gray-300 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300 font-medium py-2 px-4 rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center text-sm transform hover:scale-[1.01]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Exportar a Excel (.csv)
+            </button>
+
         </div>
     </div>
 
@@ -814,6 +821,7 @@
         const configPanel = document.getElementById('config-panel');
         const resultsModal = document.getElementById('resultsModal');
         const modalRestartBtn = document.getElementById('modal-restart-btn');
+        const exportExcelBtn = document.getElementById('export-excel-btn'); // Nuevo botón
         const thresholdSlider = document.getElementById('threshold-slider');
         const currentThresholdDisplay = document.getElementById('current-threshold');
         const thresholdMinusBtn = document.getElementById('threshold-minus');
@@ -1324,6 +1332,58 @@
                 });
             }
         }
+        
+        // --- FUNCIÓN EXPORTAR EXCEL ---
+        function exportToExcel() {
+            if (!lapHistory || lapHistory.length === 0) return;
+
+            // Datos de la cabecera del archivo
+            const pilot = pilotNameInput.value || "Desconocido";
+            const car = carModelInput.value || "Desconocido";
+            const date = new Date().toLocaleString();
+            const totalTime = formatTime(finalRaceTimeMs, true);
+            const bestLap = bestLapTime === Infinity ? "--" : (bestLapTime / 1000).toFixed(3).replace('.', ',');
+            const avgSpd = avgSpeed.toFixed(2).replace('.', ',');
+
+            // Construir CSV
+            // Usamos punto y coma (;) como separador para que Excel en español lo abra correctamente en columnas
+            let csvContent = "\uFEFF"; // BOM para caracteres especiales (tildes, ñ)
+            
+            // Metadatos de la carrera
+            csvContent += `KRONO - REPORTE DE CARRERA\n`;
+            csvContent += `Fecha;${date}\n`;
+            csvContent += `Piloto;${pilot}\n`;
+            csvContent += `Coche;${car}\n`;
+            csvContent += `Tiempo Total;${totalTime}\n`;
+            csvContent += `Mejor Vuelta;${bestLap}\n`;
+            csvContent += `Vel. Media;${avgSpd} Km/h\n\n`;
+
+            // Cabeceras de la tabla
+            csvContent += `VUELTA;TIEMPO (s);VELOCIDAD (Km/h)\n`;
+
+            // Filas de datos
+            lapHistory.forEach(row => {
+                const timeSec = (row.time / 1000).toFixed(3).replace('.', ','); // Reemplazar punto por coma decimal
+                const speed = row.speed.toFixed(2).replace('.', ',');
+                csvContent += `${row.lap};${timeSec};${speed}\n`;
+            });
+
+            // Crear Blob y descargar
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            // Nombre del archivo sanitizado
+            const safeDate = new Date().toISOString().slice(0,10);
+            const safePilot = pilot.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const fileName = `Krono_${safePilot}_${safeDate}.csv`;
+            
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         openConfirmBtn.addEventListener('click', () => {
             confirmModal.classList.remove('hidden');
@@ -1352,6 +1412,9 @@
             historyModal.classList.remove('open');
             setTimeout(() => historyModal.classList.add('hidden'), 300);
         });
+        
+        // Listener para el botón exportar
+        exportExcelBtn.addEventListener('click', exportToExcel);
 
         function stopRace(isFinished = false) {
             isRaceActive = false;
