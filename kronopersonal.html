@@ -65,7 +65,21 @@
             justify-content: flex-start;
             min-height: 100vh;
             color: #1f2937; /* Texto oscuro para fondo claro */
-            overscroll-behavior: none;
+            overscroll-behavior: none; /* Evita rebote al scroll final en móviles */
+            
+            /* BLINDAJE MOVIL: Evitar selección de texto accidental y zoom por doble tap */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Permitir selección solo en inputs para poder escribir */
+        input, select {
+            user-select: text;
+            -webkit-user-select: text;
         }
         
         /* Clases para Paneles Plateados Brillantes */
@@ -226,6 +240,13 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 12px; 
         }
+        /* BLINDAJE: Para móviles muy estrechos, usamos 1 columna para que no se rompa el diseño */
+        @media (max-width: 380px) {
+            .telemetry-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .telemetry-item {
             display: flex;
             flex-direction: column;
@@ -1776,6 +1797,11 @@
         }
         document.addEventListener('fullscreenchange', updateFullscreenIcon);
         document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+        
+        // --- BLINDAJE: REDIBUJAR AL CAMBIAR TAMAÑO ---
+        window.addEventListener('resize', () => {
+            drawLapGraph();
+        });
         
         modalRestartBtn.addEventListener('click', () => {
             resultsModal.classList.remove('open');
