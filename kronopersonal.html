@@ -1283,6 +1283,29 @@
         confirmClearBtn.addEventListener('click', () => { localStorage.removeItem('scx_history'); loadHistory(); confirmModal.classList.remove('open'); setTimeout(()=>confirmModal.classList.add('hidden'),300); });
         exportExcelBtn.addEventListener('click', exportToExcel);
         
+        // --- LOGICA PANTALLA COMPLETA ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.log("Fullscreen no soportado o bloqueado:", e);
+                });
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fsIconEnter.classList.add('hidden');
+                fsIconExit.classList.remove('hidden');
+            } else {
+                fsIconEnter.classList.remove('hidden');
+                fsIconExit.classList.add('hidden');
+            }
+        });
+
         // Init
         window.onload = () => {
             if (!movableRectangle.style.left) movableRectangle.style.left = '25%';
