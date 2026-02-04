@@ -994,6 +994,11 @@
             falseStartAlert.classList.add('show');
             if (voiceToggle.checked) window.speechSynthesis.speak(new SpeechSynthesisUtterance("¡Salida Nula!"));
             resetRaceBtn.disabled = false;
+
+            // Auto-hide after 2 seconds
+            setTimeout(() => {
+                falseStartAlert.classList.remove('show');
+            }, 2000);
         }
 
         function recordLap() {
@@ -1080,6 +1085,12 @@
             if (voiceToggle.checked && window.speechSynthesis.paused) window.speechSynthesis.resume();
             
             configPanel.classList.remove('open');
+            
+            // LECTURA FORZADA DEL DOM PARA EVITAR ERRORES
+            const val = document.getElementById('lap-limit-select').value;
+            totalLaps = val === 'Infinity' ? Infinity : parseInt(val);
+            updateLapDisplay(); 
+
             startRaceBtn.disabled = true; resetRaceBtn.disabled = true;
             falseStartAlert.classList.remove('show');
             blindTimeMs = parseInt(safetyTimeSelect.value); 
@@ -1138,6 +1149,10 @@
                 resultsModal.classList.remove('hidden');
                 setTimeout(()=>resultsModal.classList.add('open'),10);
             } else {
+                // LECTURA FORZADA DEL DOM AL REINICIAR
+                const val = document.getElementById('lap-limit-select').value;
+                totalLaps = val === 'Infinity' ? Infinity : parseInt(val);
+                
                 currentLap = 0; lapHistory = []; bestLapTime = Infinity; totalLapTime = 0;
                 currentAverageTime = 0; maxSpeed = 0; avgSpeed = 0; lastCompletedLapTime = 0;
                 document.getElementById('race-time').textContent = "00:00.000";
@@ -1257,6 +1272,11 @@
         thresholdMinusBtn.addEventListener('click', () => { if(sensitivity>5) sensitivity--; thresholdSlider.value=sensitivity; currentThresholdDisplay.textContent=sensitivity; });
         thresholdPlusBtn.addEventListener('click', () => { if(sensitivity<100) sensitivity++; thresholdSlider.value=sensitivity; currentThresholdDisplay.textContent=sensitivity; });
         
+        lapLimitSelect.addEventListener('change', () => {
+            totalLaps = lapLimitSelect.value === 'Infinity' ? Infinity : parseInt(lapLimitSelect.value);
+            updateLapDisplay();
+        });
+
         historyBtn.addEventListener('click', () => { loadHistory(); historyModal.classList.remove('hidden'); setTimeout(()=>historyModal.classList.add('open'),10); });
         closeHistoryBtn.addEventListener('click', () => { historyModal.classList.remove('open'); setTimeout(()=>historyModal.classList.add('hidden'),300); });
         openConfirmBtn.addEventListener('click', () => { confirmModal.classList.remove('hidden'); setTimeout(()=>confirmModal.classList.add('open'),10); });
@@ -1310,6 +1330,9 @@
             if (!movableRectangle.style.width) movableRectangle.style.width = '50%';
             if (!movableRectangle.style.height) movableRectangle.style.height = '50%';
             
+            // FIX: ASEGURAR SINCRONIZACION AL CARGAR LA PAGINA
+            totalLaps = lapLimitSelect.value === 'Infinity' ? Infinity : parseInt(lapLimitSelect.value);
+
             sensitivity = 20; thresholdSlider.value=20; currentThresholdDisplay.textContent=20;
             updateLapDisplay(); stopRace(false);
             const snd = document.getElementById('soundSelect');
