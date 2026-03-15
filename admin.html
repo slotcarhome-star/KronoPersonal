@@ -11,9 +11,23 @@
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .input-dark { background: #1e293b; border: 1px solid #475569; color: white; outline: none; transition: 0.3s; }
         .input-dark:focus { border-color: #94a3b8; box-shadow: 0 0 10px rgba(148, 163, 184, 0.3); } /* Foco plateado */
+        
+        /* ESTILOS PARA LA TABLA DE HISTORIAL */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        .history-table th { text-align: left; padding: 10px; border-bottom: 1px solid #475569; color: #94a3b8; }
+        .history-table td { padding: 10px; border-bottom: 1px solid #1e293b; }
     </style>
 </head>
-<body class="min-h-screen p-2">
+<body class="min-h-screen p-2 relative">
+
+    <!-- ALERTA PERSONALIZADA (Reemplazo de alert() nativo) -->
+    <div id="custom-alert" class="hidden fixed inset-0 bg-slate-900/90 z-[100] flex flex-col items-center justify-center p-4">
+        <div class="glass p-6 rounded-xl border border-slate-500/50 w-full max-w-sm text-center shadow-2xl">
+            <i class="fas fa-exclamation-circle text-4xl text-slate-400 mb-4"></i>
+            <p id="custom-alert-msg" class="text-white text-sm mb-6"></p>
+            <button onclick="document.getElementById('custom-alert').classList.add('hidden')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg transition border border-slate-500">ACEPTAR</button>
+        </div>
+    </div>
 
     <!-- 1. PANTALLA DE BLOQUEO -->
     <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-4">
@@ -91,9 +105,20 @@
                 </div>
             </div>
         </div>
+
+        <!-- HISTORIAL -->
+        <div class="glass p-5 rounded-xl border border-slate-700">
+            <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Licencias Generadas</h3>
+            <div class="overflow-x-auto">
+                <table class="history-table">
+                    <thead><tr><th>EMAIL</th><th>CÓDIGO</th><th>ESTADO</th></tr></thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
         
-        <div class="text-center pt-4">
-             <button onclick="logout()" class="text-slate-500 hover:text-white text-xs"><i class="fas fa-power-off mr-1"></i> Cerrar Sesión</button>
+        <div class="text-center pt-4 pb-6">
+             <button onclick="logout()" class="text-slate-500 hover:text-white transition text-xs"><i class="fas fa-power-off mr-1"></i> Cerrar Sesión</button>
         </div>
     </div>
 
@@ -101,6 +126,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Función personalizada para alertas
+        window.showAlert = function(msg) {
+            document.getElementById('custom-alert-msg').textContent = msg;
+            document.getElementById('custom-alert').classList.remove('hidden');
+        };
 
         // DATOS FIJOS SILVER
         const PRECIO = "5€";
@@ -128,7 +159,7 @@
         (async function initSecurity() {
             try {
                 await signInAnonymously(auth);
-                document.getElementById('auth-status').textContent = "Conectado";
+                document.getElementById('auth-status').textContent = "Conectado Seguro";
                 document.getElementById('auth-status').className = "text-xs text-green-500 mt-2 font-bold";
             } catch(e) { 
                 console.error("Error Auth:", e); 
@@ -143,29 +174,59 @@
             if(pass === "admin123") {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-panel').classList.remove('hidden');
+                
+                // Cargar estadísticas e historial al iniciar sesión
                 initStats();
+                loadHistory();
             } else {
                 document.getElementById('login-msg').classList.remove('hidden');
             }
         }
         window.logout = function() { location.reload(); }
 
-        // --- ESTADÍSTICAS ---
+        // --- ESTADÍSTICAS CORREGIDAS ---
         function initStats() {
             try {
-                onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stats'), (docSnap) => {
-                    const count = docSnap.data()?.purchase_clicks || 0;
-                    document.getElementById('clicks-counter').textContent = count;
+                // Se añade 'general' para referirse a un documento específico válido
+                onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'stats', 'general'), (docSnap) => {
+                    if (docSnap.exists()) {
+                        document.getElementById('clicks-counter').textContent = docSnap.data()?.purchase_clicks || 0;
+                    } else {
+                        document.getElementById('clicks-counter').textContent = "0";
+                    }
                 }, (error) => {
-                    console.warn("No se pudieron leer estadísticas (Permisos?)");
+                    console.error("Error cargando estadísticas:", error);
+                    document.getElementById('clicks-counter').textContent = "Err";
                 });
-            } catch(e) { console.warn("Stats desactivadas"); }
+            } catch(e) { 
+                console.error("Excepción en initStats:", e); 
+            }
+        }
+
+        // --- HISTORIAL DE LICENCIAS ---
+        function loadHistory() {
+            try {
+                onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'access_codes'), (snap) => {
+                    const body = document.getElementById('history-body');
+                    body.innerHTML = "";
+                    snap.docs.forEach(d => {
+                        const data = d.data();
+                        body.innerHTML += `<tr>
+                            <td>${data.email}</td>
+                            <td class="font-mono text-slate-300 font-bold">${data.code}</td>
+                            <td>${data.current_session ? 'Activo' : '-'}</td>
+                        </tr>`;
+                    });
+                });
+            } catch(e) {
+                console.error("Error cargando historial:", e);
+            }
         }
 
         // --- FASE 1: ENVIAR DATOS DE PAGO ---
         window.sendPaymentRequest = function() {
             const email = document.getElementById('client-email-1').value;
-            if(!email) return alert("Escribe el correo del interesado.");
+            if(!email) return showAlert("Escribe el correo del interesado.");
             
             const subject = encodeURIComponent("Instrucciones Pago KronoPersonal SILVER");
             
@@ -184,7 +245,7 @@
             const deliverySection = document.getElementById('delivery-section');
             const btnSend = document.getElementById('btn-send-delivery');
 
-            if(!email) return alert("Falta el correo del cliente.");
+            if(!email) return showAlert("Falta el correo del cliente.");
             
             btn.disabled = true; 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERANDO...';
